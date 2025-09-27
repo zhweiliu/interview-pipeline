@@ -1,0 +1,17 @@
+[project]
+name = "interview"
+version = "0.1.0"
+description = "Pipeline demo"
+authors = [
+    {name = "ZhengWei-Liu"}
+]
+readme = "README.md"
+requires-python = ">=3.13, <3.14"
+dependencies = [
+    "prefect (>=3.4.19,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
