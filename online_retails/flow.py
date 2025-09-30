@@ -1,7 +1,7 @@
 from prefect import flow
 from tasks.raw import extract_online_retails
 from tasks.vault import load_hubs, load_links, load_sats
-from online_retails.tasks.mart import build_fact_table, build_dim_table
+from tasks.mart import build_fact_table, build_dim_table
 import os
 from dotenv import load_dotenv
 load_dotenv()
