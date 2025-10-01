@@ -15,7 +15,7 @@ def fact_sales():
         hub_invoice as (select hub_invoice_hash_key, InvoiceNo from vault.hub_invoice),
         sat_invoice as (select hub_invoice_hash_key, Quantity, UnitPrice, TotalAmount from vault.sat_invoice where ReturnStatus='Normal'),
         link_invoice_product as (select hub_invoice_hash_key, hub_product_hash_key from vault.link_invoice_product),
-        link_invoice_customer as (select hub_invoice_hash_key, hub_customer_hash_key from vault.link_invoice_customer),
+        link_invoice_customer as (select hub_invoice_hash_key, hub_customer_hash_key from vault.link_invoice_customer where hub_customer_hash_key not in (select hub_customer_hash_key from vault.hub_customer where CustomerID=0) ),
         link_invoice_time as (select hub_invoice_hash_key, hub_time_hash_key from vault.link_invoice_time),
         link_invoice_country as (select hub_invoice_hash_key, hub_country_hash_key from vault.link_invoice_country)
     SELECT
@@ -52,7 +52,7 @@ def fact_sale_returns():
         hub_invoice as (select hub_invoice_hash_key, InvoiceNo from vault.hub_invoice),
         sat_invoice as (select hub_invoice_hash_key, Quantity, UnitPrice, TotalAmount from vault.sat_invoice where ReturnStatus='Return'),
         link_invoice_product as (select hub_invoice_hash_key, hub_product_hash_key from vault.link_invoice_product),
-        link_invoice_customer as (select hub_invoice_hash_key, hub_customer_hash_key from vault.link_invoice_customer),
+        link_invoice_customer as (select hub_invoice_hash_key, hub_customer_hash_key from vault.link_invoice_customer where hub_customer_hash_key not in (select hub_customer_hash_key from vault.hub_customer where CustomerID=0)),
         link_invoice_time as (select hub_invoice_hash_key, hub_time_hash_key from vault.link_invoice_time),
         link_invoice_country as (select hub_invoice_hash_key, hub_country_hash_key from vault.link_invoice_country)
     SELECT
