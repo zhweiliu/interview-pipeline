@@ -30,10 +30,10 @@ def fact_sales():
         s.TotalAmount as total_amount
     FROM hub_invoice i
     JOIN sat_invoice s ON i.hub_invoice_hash_key = s.hub_invoice_hash_key
-    LEFT JOIN link_invoice_product p ON i.hub_invoice_hash_key = p.hub_invoice_hash_key
-    LEFT JOIN link_invoice_customer c ON i.hub_invoice_hash_key = c.hub_invoice_hash_key
-    LEFT JOIN link_invoice_time t ON i.hub_invoice_hash_key = t.hub_invoice_hash_key
-    LEFT JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash_key
+    JOIN link_invoice_product p ON i.hub_invoice_hash_key = p.hub_invoice_hash_key
+    JOIN link_invoice_customer c ON i.hub_invoice_hash_key = c.hub_invoice_hash_key
+    JOIN link_invoice_time t ON i.hub_invoice_hash_key = t.hub_invoice_hash_key
+    JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash_key
     """)
 
     logger.info(f"fact_sales builded.")
@@ -67,10 +67,10 @@ def fact_sale_returns():
         s.TotalAmount as total_amount
     FROM hub_invoice i
     JOIN sat_invoice s ON i.hub_invoice_hash_key = s.hub_invoice_hash_key
-    LEFT JOIN link_invoice_product p ON i.hub_invoice_hash_key = p.hub_invoice_hash_key
-    LEFT JOIN link_invoice_customer c ON i.hub_invoice_hash_key = c.hub_invoice_hash_key
-    LEFT JOIN link_invoice_time t ON i.hub_invoice_hash_key = t.hub_invoice_hash_key
-    LEFT JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash_key
+    JOIN link_invoice_product p ON i.hub_invoice_hash_key = p.hub_invoice_hash_key
+    JOIN link_invoice_customer c ON i.hub_invoice_hash_key = c.hub_invoice_hash_key
+    JOIN link_invoice_time t ON i.hub_invoice_hash_key = t.hub_invoice_hash_key
+    JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash_key
     """)
 
     logger.info(f"fact_sale_returns builded.")
