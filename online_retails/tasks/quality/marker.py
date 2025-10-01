@@ -5,11 +5,12 @@ import utilx.clickhouse_client as ch
 def anomaly_customer_invoioces():
     """從 Marts 找出異常的客戶"""
     logger = get_run_logger()
-    logger.info(f"mark anomaly_customer...")
+    logger.info(f"mark anomaly_customer_invoioces...")
 
     client = ch.get_client()
+    client.command("TRUNCATE TABLE quality.anomaly_customer_invoioces")
     client.command("""
-    INSERT INTO metrics.anomaly_customer
+    INSERT INTO quality.anomaly_customer_invoioces
     WITH
         hub_customer AS (SELECT hub_customer_hash_key, CustomerID FROM vault.hub_customer WHERE CustomerID = 0),
         link_invoice_customer AS (SELECT hub_invoice_hash_key, hub_customer_hash_key FROM vault.link_invoice_customer),
@@ -17,7 +18,7 @@ def anomaly_customer_invoioces():
         link_invoice_time AS (SELECT hub_invoice_hash_key, hub_time_hash_key FROM vault.link_invoice_time),
         link_invoice_country AS (SELECT hub_invoice_hash_key, hub_country_hash_key FROM vault.link_invoice_country),
         hub_invoice AS (SELECT hub_invoice_hash_key, InvoiceNo FROM vault.hub_invoice),
-        sat_invoice AS (SELECT hub_invoice_hash_key, TotalAmount FROM vault.sat_invoice)
+        sat_invoice AS (SELECT hub_invoice_hash_key, Quantity, UnitPrice, TotalAmount FROM vault.sat_invoice)
     SELECT
         i.hub_invoice_hash_key AS sale_id,
         i.InvoiceNo as invoice_no,
@@ -34,7 +35,7 @@ def anomaly_customer_invoioces():
     JOIN hub_customer c ON lic.hub_customer_hash_key = c.hub_customer_hash_key
     JOIN link_invoice_product p ON i.hub_invoice_hash_key = p.hub_invoice_hash_key
     JOIN link_invoice_time t ON i.hub_invoice_hash_key = t.hub_invoice_hash_key
-    JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash
+    JOIN link_invoice_country co ON i.hub_invoice_hash_key = co.hub_invoice_hash_key
     """)
 
-    logger.info(f"anomaly_customer marked.")
+    logger.info(f"anomaly_customer_invoioces marked.")

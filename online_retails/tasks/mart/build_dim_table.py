@@ -42,7 +42,7 @@ def dim_customer():
          c.CustomerID as customer_id,
          lcc.hub_country_hash_key as country_key
     FROM hub_customer c
-    LEFT JOIN link_customer_country lcc ON c.hub_customer_hash_key = lcc.hub_customer_hash_key
+    JOIN link_customer_country lcc ON c.hub_customer_hash_key = lcc.hub_customer_hash_key
     """)
 
     logger.info(f"dim_customer builded.")
