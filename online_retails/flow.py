@@ -2,6 +2,7 @@ from prefect import flow
 from tasks.raw import extract_online_retails
 from tasks.vault import load_hubs, load_links, load_sats
 from tasks.mart import build_fact_table, build_dim_table
+from tasks.quality import marker
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -48,8 +49,11 @@ def online_retail_elt_flow():
     dim_time_task = build_dim_table.dim_time(wait_for=[sat_time_task, fact_sales_task])
     dim_country_task = build_dim_table.dim_country(wait_for=[fact_sales_task])
 
-    # Metrics depend on PSA and raw data
-    # metrics_task = calculate_metrics(client=client, wait_for=[fact_sales_task, fact_sale_returns_task, dim_product_task, dim_customer_task, dim_time_task, dim_country_task, dim_country_task])
+    # Quality depend on Marts and Vault data
+    anomaly_customer_invoioces_task = marker.anomaly_customer_invoioces(wait_for=[hub_customer_task, hub_invoice_task, sat_invoice_task, link_invoice_customer_task, link_invoice_product_task, link_invoice_time_task, link_invoice_country_task])
+    anomaly_invoice_task = marker.anomaly_invoice(wait_for=[fact_sales_task])
+    data_quality_task = marker.data_quality(wait_for=[anomaly_customer_invoioces_task, anomaly_invoice_task, fact_sales_task, fact_sale_returns_task])
+    sales_summary_task = marker.sales_summary(wait_for=[fact_sales_task, link_invoice_time_task, sat_time_task])
 
     print("ELT pipeline finished successfully.")
 
