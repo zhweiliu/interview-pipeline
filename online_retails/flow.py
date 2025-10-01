@@ -3,6 +3,7 @@ from tasks.raw import extract_online_retails
 from tasks.vault import load_hubs, load_links, load_sats
 from tasks.mart import build_fact_table, build_dim_table
 from tasks.quality import marker
+from tasks.metrics import notification
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -55,7 +56,15 @@ def online_retail_elt_flow():
     data_quality_task = marker.data_quality(wait_for=[anomaly_customer_invoioces_task, anomaly_invoice_task, fact_sales_task, fact_sale_returns_task])
     sales_summary_task = marker.sales_summary(wait_for=[fact_sales_task, link_invoice_time_task, sat_time_task])
 
-    print("ELT pipeline finished successfully.")
+    # Notify quality to Prometheus
+    notification.anomaly_unit_price_count(wait_for=[data_quality_task])
+    notification.anomaly_quantity_count(wait_for=[data_quality_task])
+    notification.missing_customer_id_ratio(wait_for=[data_quality_task])
+    notification.latest_min_total_amount(wait_for=[sales_summary_task])
+    notification.latest_max_total_amount(wait_for=[sales_summary_task])
+    notification.latest_median_total_amount(wait_for=[sales_summary_task])
+    notification.latest_avg_total_amount(wait_for=[sales_summary_task])
+    notification.latest_sales_volume(wait_for=[sales_summary_task])
 
 if __name__ == "__main__":
     online_retail_elt_flow()
