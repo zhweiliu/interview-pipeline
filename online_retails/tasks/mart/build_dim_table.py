@@ -35,7 +35,7 @@ def dim_customer():
     client.command("""
     INSERT INTO marts.Dim_Customer
     with
-        hub_customer as (select hub_customer_hash_key, CustomerID from vault.hub_customer),
+        hub_customer as (select hub_customer_hash_key, CustomerID from vault.hub_customer where CustomerID <> 0),
         link_customer_country as (select hub_customer_hash_key, hub_country_hash_key from vault.link_customer_country)
     SELECT
          c.hub_customer_hash_key as customer_key,
