@@ -1,185 +1,120 @@
-# 📊 interview-pipeline：使用 Prefect 編排的資料管線
+# Data Engineering Interview Project: Online Retail II ETL/ELT Pipeline
 
-## 📝 專案簡介
+這是英國線上零售商 2009/12/01 - 2011/12/09 交易數據的資料倉儲建置與自動化 ETL 實作專案。
 
-此專案旨在展示如何使用 **Python** 建立資料處理管線（Data Pipeline），並利用現代工作流協調工具 **Prefect** 進行任務（Tasks）和流程（Flows）的定義與編排。
+---
 
-## ✨ 主要特色
+## 🎯 專案目標
 
-* **資料管線編排 (Orchestration):** 使用 **Prefect** 定義具備依賴關係的任務和流程，實現彈性且可觀測的資料工作流。
-* **Python 開發:** 所有任務和流程均使用 Python 撰寫。
-* **依賴管理 (Dependency Management):** 採用 **Poetry** 進行專案依賴管理，確保環境一致性。
-* **持續整合/部署 (CI/CD):** 包含 GitHub Actions 設定，用於自動化測試或部署 Prefect 流程（`.github/workflows`）。
-* **模組化設計:** 將核心業務邏輯與工具函數分層，提高程式碼的可讀性和可維護性。
+目標是將原始 CSV 交易資料轉化為一個可供分析的 **Star Schema** 資料倉儲，並建立自動化 **ETL/ELT** 流程，以支援每日銷售、客戶分析和地區分佈等即時報表需求。
 
-## 🛠️ 技術棧 (Tech Stack)
+---
 
-| 類別 | 工具/語言 | 用途 |
+## 🛠️ 技術棧 (Technology Stack)
+
+| 類別 | 工具 | 目的 |
 | :--- | :--- | :--- |
-| **主要語言** | Python | 核心開發語言 |
-| **工作流編排** | Prefect | 任務和流程的定義、排程與監控 |
-| **依賴管理** | Poetry | 專案依賴管理與虛擬環境建立 |
-| **容器化** | Dockerfile  | 流程打包與環境隔離 |
-| **持續整合** | GitHub Actions | 自動化工作流 (CI/CD) |
+| **協調與排程** | Prefect 2.x | 每日 ETL 流程自動化、監控與告警。 |
+| **資料庫** | ClickHouse | 作為 OLAP 資料倉儲，提供快速的聚合查詢和報表支持 (經考官允許使用)。 |
+| **語言與函式庫** | Python, Poetry | ETL 核心邏輯開發與依賴管理。 |
+| **基礎設施** | k3d, ArgoCD | **(詳見 `interview-infrastructure` 專案)** 專案運行所需的本地 Kubernetes 環境與 GitOps 管理。 |
+| **視覺化** | Metabase | 報表與儀表板呈現。 |
 
-## 📂 專案結構
+---
 
-本專案採用以下結構組織程式碼：
+## 🚀 環境部署與設置
 
-```
-interview-pipeline/
-├── .github/
-│   └── workflows/   # GitHub Actions 工作流定義
-├── online_retails/  # 處理特定資料來源 (線上零售資料) 的主要管線邏輯
-│   ├── tasks        # Prefect 任務定義
-│   └── flows.py     # Prefect 流程定義
-├── utilx/           # 通用工具函數、輔助模組
-├── pyproject.toml   # Poetry 專案設定檔
-├── poetry.lock      # Poetry 鎖定依賴版本
-└── README.md
-```
+**⚠️ 前提條件：** 本 pipeline 假設基礎設施（Prefect Server, ClickHouse Server, Metabase）已透過 `zhweiliu/interview-infrastructure` 專案部署完成。
 
-## 🚀 環境設定與執行
+### 1. 取得原始資料
 
-### 1. 安裝 Poetry
+請從 **UCI Online Retail II** 資料集連結下載原始 CSV 檔案，並將其放置於 Prefect Agent 可存取的位置。
 
-請確保您的系統已安裝 [Poetry](https://python-poetry.org/docs/#installation) ，這是用來管理 Python 依賴的工具。
+> 來源: [https://archive.ics.uci.edu/dataset/502/online+retail+ii](https://archive.ics.uci.edu/dataset/502/online+retail+ii)
 
-### 2. 安裝專案依賴
+### 2. Python 環境與依賴安裝
 
-克隆專案並使用 Poetry 安裝所有必要的依賴：
+使用 Poetry 建立虛擬環境並安裝所有依賴：
 
 ```bash
-# 1. 克隆專案
+# Clone the repository
 git clone [https://github.com/zhweiliu/interview-pipeline.git](https://github.com/zhweiliu/interview-pipeline.git)
 cd interview-pipeline
 
-# 2. 啟動 Poetry 虛擬環境
-poetry env use python
-
-# 3. 進入虛擬環境
-poetry env activate
+# Install dependencies using Poetry
+poetry install
+poetry shell
 ```
 
-### 3. 設定 local infrastructure
+### 3. 設定 Prefect Flow
+設定 Prefect 遠端連線： 確保您的本地環境已配置正確的 PREFECT_API_URL 和 PREFECT_API_KEY 以連接到 k8s Cluster 中的 Prefect Server。
 
-和這個 repository 配合的 [interview-infrastructure](https://github.com/zhweiliu/interview-infrastructure) 已將所需的環境都整理好。這是一個透過 k3d cluster 模擬 kubernetes 環境的工具，並在 k3d cluster 下部署許多對應服務，如 : 
-* **Prefect :** 資料管道平台 (Data Pipeline)，比 Airflow 更加輕量且容易上手
-* **ClickHouse :** 適合 OLAP 應用的資料庫
-* **Metabase :** 提供給 Data Analyst 使用的視覺化 BI 工具
-* **Prometheus :** 收集特定數據指標(metrics)，通常與 Grafana 配合使用
-* **Grafana :** 從 Prometheus 收集 metrics ，建立監控面板並可設定警示條件(Alert)與通知方式(Email or slack)
-* **Postgresql :** 提供給 Metabase 和 Prefect 紀錄組態設定
+建立 Prefect Block： 根據您的 ClickHouse 連線資訊，在 Prefect UI 中建立 ClickHouse 連線 Block。
 
-### 4. 執行 ClickHouse 初始化 sql 
-
-請先執行 ClickHouse 初始化 sql ，建置程式需要使用的 **Databases / Tables**
-
-* 1. port-forward clickhouse
-        ```base
-        kubectl port-forward service/service-standard 8123:8123 -n database
-        ```
-
-* 2. 使用支援 ClickHouse 的 DB Tool 連線登入。推薦使用 [DBeaver](https://dbeaver.io/download/)
-        ```
-        # 使用 superuser 帳號密碼登入
-        帳號 : admin
-        密碼 : admin
-        ```
-
-* 3. 執行 `online_retails/ddl/init.sql` 檔案，並確認以下 database 建立完成
-        ```
-        - raw
-        - vault
-        - marts
-        - quality
-        ```
-
-### 5. 本地端執行方法 (建議使用 VSCode)
-
-#### 1. local infrastructure 設定完成後，在 VSCode 建立一個 **Python Debugger** ，並修改 **launch.json** 如下
-```
-{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-
-        {
-            "name": "oneline_retails",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/online_retails/flow.py",
-            "envFile": "${workspaceFolder}/online_retails/.env",
-        }
-    ]
-}
-```
-
-#### 2. 修改 **online_retails/.env** 的 PYTHONPATH ， 指向到 workspace 的根目錄 (或是 online_retails 上一層)
-```
-# 目前 .env 是我個人開發環境的路徑，請修改以下內容以適配您的開發環境
-PYTHONPATH="C:\\Users\\zweil\\Documents\\interview-pipeline"
-```
-
-#### 3. 執行 Debugger
-
-### 5.1 本地端執行方法 (使用 Kubectl)
-
-若您熟悉 kubernetes 與 kubectl 的操作，您可以直接執行 [interview-infrastructure](https://github.com/zhweiliu/interview-infrastructure) 已經幫您建置好的 Cronjob `online-retail-flow`
-
-#### 1. 檢查 Cronjob `online-retail-flow` 是否部屬完成
+部署 Flow： 執行以下指令將 ETL 流程部署到 Prefect Server：
 
 ```bash
-kubectl get cronjob -n prefect
+# 部署主要的 ETL/ELT Flow
+prefect deployment build ./online_retails/online_retail_flow.py:online_retail_etl_flow --name "Online Retail Daily ETL" --apply
 
-# NAME                 SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-online-retail-flow   0 0 * * *   <none>     True      0        <none>          159m
+# 部署資料品質監控與告警 Flow
+prefect deployment build ./utilx/notification_flow.py:data_quality_alert_flow --name "Data Quality Check & Alert" --apply
 ```
 
-#### 2. 建立 Job 執行
+### 4. 執行與排程
 
-```bash
-kubectl create job online-retail-flow --from=cronjob/online-retail-flow -n prefect
-```
+- 手動執行： 您可以直接在 Prefect UI 中點擊部署的 Flow 進行手動執行測試。
+- 自動排程： ETL 流程已設定為每日 Cron 排程執行。
 
-#### 3. 檢查 Pod 是否執行
-``` bash
-kubectl get pod -n prefect
+---
 
-# NAME                                          READY   STATUS    RESTARTS     AGE
-> online-retail-flow-692k5                      1/1     Running   0            4s
-prefect-server-ddd78c8bf-j2hxq                1/1     Running   5 (8h ago)   3d19h
-prometheus-prefect-exporter-7778c866b-f2zlq   1/1     Running   3 (8h ago)   19h
-```
+## 🗃️ 資料倉儲模型與設計假設 (Data Vault 2.0 & Star Schema)
 
-主要確認 `prefect-server-` 開頭的 pod 是否進入 Running status ，該 pod 後綴為隨機碼
+本專案採用 **Data Vault 2.0** 框架進行分層建模，最終層 **Marts** 採用 **Star Schema** 設計。所有資料庫均選用 **ClickHouse** (接受其不支援 Foreign Key 實體約束的特性)。
 
-#### 4. port-forward prefect-server
+### 1. 資料庫與分層架構
 
-```bash
-kubectl port-forward service/prefect-server 4200:4200 -n prefect
-```
+| 資料庫名稱 | 目的 (Data Vault 2.0) | 備註 |
+| :--- | :--- | :--- |
+| **raw** | 存放原始資料 (Landing) 和 **PSA** (Persistent Staging Area) | **預先計算所有 Hash Key (Load Date, Hash Key, Hash Diff)**，作為進入 Vault 的準備。 |
+| **vault** | 存放 Hub, Link, Satellite 資料表 | 包含業務鍵 (Business Keys)、關係 (Links) 和描述性資料 (Satellites)。 |
+| **marts** | 存放所有 **Fact Table** 和 **Dim Table** | 依據 Star Schema 建模，直接供下游報表 (Metabase) 使用。 |
+| **quality** | 存放 Data Quality 檢查結果 | 記錄每日銷售總額範圍、缺失客戶 ID 比例等監控數據。 |
 
-利用 URL 登入 prefect UI -> 左側選單點擊 Runs
+> **DDL 腳本：** 所有資料庫與表格的初始化 SQL 語法位於 `./online_retails/ddl/init.sql`。
 
-您應該會看到一個正在執行的 flow `Online Retail ELT Pipeline` (下圖是 flow 執行完畢後我才截圖)
+### 2. Marts 層 Star Schema 設計假設 (針對 Fact_Sales)
 
-![prefect-runs-flow](pic/prefect-runs-flow.png)
+| 考題要求 | 設計決策 | 決策解釋 |
+| :--- | :--- | :--- |
+| **Sale ID (PK)** | **Hash Key (InvoiceNo + StockCode + InvoiceDate)** | 作為 Marts 層 Fact 表的主鍵，使用 Data Vault 結構中的 Link Hash Key，保證每筆明細的唯一性。 |
+| **Invoice No (FK)** | **保留為普通欄位** | 由於缺乏 Dim_Invoice 表，此欄位在 Fact_Sales 中僅作為業務識別碼保留，**不設置為 FK**。 |
+| **Product Key** (StockCode) | **Hash ID (基於 StockCode)** | 在 **raw** 層預計算 StockCode 的 Hash Key。**StockCode 字母尾綴視為獨立的 SKU**（例如 $84029G$ 和 $84029E$ 是兩個不同的產品），避免在 Marts 層出現聚合失真。 |
+| **Time Key** (InvoiceDate) | **String (基於 InvoiceDate 的 hash)** | time_key 為 InvoiceDate 的 hash_key。 Dim_Time 粒度為**年**/**月**/**天**/**星期幾**，Dim_Time 無法支持小時級別分析。 |
+| **退貨處理** | **獨立 Fact_Sale_Returns 表** | 將所有 InvoiceNo 以 C 開頭或 Quantity < 0 的記錄，從 Fact_Sales 中**排除**，並載入到 **Fact_Sale_Returns** 表中 (與 Fact_Sales 結構相同)。 |
 
-點擊 flow 的隨機碼，可以看到 flow 執行的細節
+### 3. 自動化與監控機制 (Prometheus/Grafana)
 
-![flow-run-completed](pic/flow-run-completed.png)
+* **監控腳本：** 指標數據腳本位於 `./online_retails/tasks/metrics/notification.py`。
+* **指標傳遞：** 該腳本負責計算需要監控的指標數據（如銷售總額、缺失客戶 ID 比例）並將其傳遞給 **Prometheus**。
+* **視覺化與告警：** 最終在 **Grafana** (部署於 [interview-infrastructure](https://github.com/zhweiliu/interview-infrastructure) 專案) 中呈現監控儀表板，並透過 Grafana 的內建 Alert 機制發送告警。
 
-#### 5. 進入 metabase 查看 dashboard
+### 資料清理邏輯
 
-先執行 port-forward metabase service
+* **空值處理：** 丟棄 StockCode、 InvoiceDate 為空的行。 將 Customer ID 空行轉變為 Default Value `0` ，用於計算 Customer ID 缺失比例。
+* **重複資料：** 依據 (InvoiceNo + StockCode + InvoiceDate) 組合進行去重。
+* **基本轉換：** 計算 TotalAmount = Quantity $\times$ UnitPrice。
+* **異常標記：** UnitPrice $\le$ 0 或 Quantity > 1000 的行將被標記，並透過 Grafana **輸出警示**。
 
-```bash
-kubectl port-forward service/metabase 8300:8300 -n database
-```
+---
 
-透過 URL 進入到 metabase UI 查看 dashboard 。
+## 💡 成果展示 (視覺化)
 
-![metabase-dashboard](pic/metabase-dashboard.png)
+以下是使用 **Metabase** 連接 ClickHouse 資料倉儲所產生的關鍵報表截圖：
+
+*  **每日銷售趨勢 (折線圖)**
+*  **國家別銷售排行 (長條圖) (過去 30 天)** 
+*  **熱門商品銷售 Top 10 (過去 30 天)**
+
+![metabase-dashboard.png](pic/metabase-dashboard.png)
+
